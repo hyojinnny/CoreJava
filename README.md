@@ -928,3 +928,195 @@ const thunk = store => next => action => {
     - store, next는 한 번 생성된 후로 바뀌지 않는 속성, action은 매번 변경되는 속성
     - store, next 값이 결정되면 Redux 내부에서 logger 또는 thunk에 값을 미리 넘겨서 반환된 함수를 저장
     - 이후 action만 받아서 처리
+
+## Ch6
+### 6-1
+Person.prototype
+
+* 생성자 함수(constructor)로 new 키워드와 함께 객체를 생성하면 인스턴스의 __proto__는 자동으로 해당 생성자의 prototype을 참조함
+* Person.prototype에는 인스턴스들이 공유하는 메서드가 담기며, suzi.__proto__가 Person.prototype을 참조하므로 getName() 등 메서드에 접근 가능.
+* __proto__는 생략 가능하므로 suzi.getName()처럼 바로 호출 가능. 이때 this는 suzi를 가리킴
+
+### 6-2
+prototype과 __proto__
+
+* 생성자 함수는 prototype 프로퍼티를 가지고 있고, 그 안에는 메서드나 프로퍼티가 정의됨.
+* 인스턴스는 __proto__를 통해 생성자의 prototype과 연결되고, 이 구조를 통해 상속이 이루어짐.
+
+### 6-3
+constructor 프로퍼티
+
+* 인스턴스의 __proto__나 생성자의 prototype 안에는 constructor라는 속성이 있어서, 해당 인스턴스를 만든 생성자 함수를 참조할 수 있음.
+
+### 6-4
+constructor 변경
+
+* constructor는 객체에 따라 변경 가능하지만, 변경해도 이미 생성된 인스턴스의 구조가 바뀌는 건 아님.
+* 생성자 정보를 constructor로 추적하는 건 신뢰성이 떨어질 수 있음.
+
+### 6-5
+다양한 constructor 접근 방법
+
+* p1, p2, p3, p4, p5 모두 Person의 인스턴스임
+
+* 아래는 모두 동일한 대상을 가리킴
+```js
+[Constructor]
+[instance].__proto__.constructor
+[instance].constructor
+Object.getPrototypeOf([instance]).constructor
+[Constructor].prototype.constructor
+```
+* 아래는 모두 동일한 객체(prototype)에 접근할 수 있음
+```js
+[Constructor].prototype
+[instance].__proto__
+[instance]
+Object.getPrototypeOf([instance])
+```
+
+### 6-6
+메서드 오버라이드
+
+* 메서드 오버라이드 : 메서드 위에 메서드를 덮어씌웠다는 표현
+    - getName이라는 메서드를 찾는 방식은 가장 가까운 대상인 자신의 프로퍼티를 검색하고, 없으면 그 다음으로 가까운 대상인 __proto__를 겁색하는 순서로 진행
+* 인스턴스에 메서드를 오버라이드하면, 프로토타입 체인보다 우선 검색되므로 해당 메서드가 실행됨.
+* prototype의 메서드를 직접 호출하면 this가 prototype을 가리켜 원하는 결과가 나오지 않을 수 있음 → call/apply로 this를 바꿔서 해결.
+
+### 6-7
+배열에서 배열 메서드 및 객체 메서드 실행
+
+* 메서드는 우선 자기 자신에게서 찾고, 없으면 __proto__를 따라가며 검색함. 이를 프로토타입 체이닝이라 부름.
+
+### 6-8
+메서드 오버라이드와 프로토타입 체이닝
+
+* 배열(arr)은 Array.prototype을 상속하고, 그 위로 Object.prototype까지 체이닝됨.
+* toString()은 이런 체인을 따라가며 실행됨.
+
+### 6-9
+Object.prototype에 추가한 메서드에의 접근
+
+* Object.prototype에 메서드를 추가하면 대부분의 데이터 타입에서 사용할 수 있음.
+* 반대로 Object 생성자 함수에 메서드를 붙이면 static이므로 인스턴스에서는 호출 불가능.
+
+### 6-10
+Grade 생성자 함수와 인스턴스
+
+* Grade는 유사 배열 객체로, 배열처럼 인덱스와 length를 가지지만 배열 메서드를 쓰려면 별도 처리가 필요함.
+* 배열 메서드를 사용하려면 call/apply 또는 Grade.prototype을 Array.prototype과 연결해야 함.
+
+## Ch7
+### 7-1
+Static & prototype method
+
+* prototype method는 인스턴스에서 호출 가능.
+* static method는 생성자 함수 자체에서만 호출 가능. 인스턴스에서는 접근 불가.
+
+### 7-2
+(예제 6-10) Grade 생성자 함수 및 인스턴스
+
+* Grade는 배열처럼 보이지만 prototype 구조 상 배열이 아님.
+* 클래스에 구체적인 데이터를 담으면 인스턴스에 영향을 줄 수 있어, 바람직하지 않음.
+
+### 7-3
+length 프로퍼티를 삭제한 경우
+
+* Grade 인스턴스의 length는 삭제 가능.
+* 삭제하면 push() 시 prototype 체인에 있는 length를 사용함 → 이상한 결과 초래.
+
+### 7-4
+요소가 있는 배열을 prototype에 매칭한 경우
+
+* 클래스의 prototype에 값을 넣으면 인스턴스에 영향을 줌.
+* 클래스는 데이터를 가지지 말고 메서드만 가져야 함.
+
+### 7-5
+Rectangle, Square 클래스
+
+* Rectangle, Square 클래스 각각 getArea() 메서드 가짐.
+* Square는 Rectangle을 상속하도록 설계 가능.
+
+### 7-6
+Square 클래스 변형
+
+* Square 클래스에서 height를 width와 동일하게 설정하면 상속 구조가 더 깔끔해짐
+
+### 7-7
+Rectangle 클래스를 상속하는 Square 클래스
+
+* Square.prototype = new Rectangle()으로 상속 가능하지만, constructor가 바뀜
+* prototype에 데이터가 있어도 인스턴스에 영향 미침 → 문제 발생
+
+### 7-8
+클래스 상속 및 추상화 방법(1) - 인스턴스 생성 후 프로퍼티 제거
+
+* Square.prototype에서 데이터 제거하고 동결(freeze)해 변경 방지.
+* 클래스는 오직 메서드만 포함되도록 유지하는 방식.
+
+### 7-9
+클래스 상속 및 추상화 방법(2) - 빈 함수를 활용
+
+* 중간에 빈 함수(Bridge)를 사용해 prototype 연결 → prototype 상에 인스턴스가 없어지고 구조가 깔끔해짐.
+* 즉시실행함수 내부에서 Bridge를 선언해서 이를 클로저로 활용 - 메모리에 불필요한 함수 선언 줄임
+
+### 7-10
+클래스 상속 및 추상화 방법(3) - Object.create 활용
+
+* Object.create(SuperClass.prototype)을 통해 prototype 연결 → SuperClass의 인스턴스를 만들지 않아도 됨.
+
+### 7-11
+클래스 상속 및 추상화 방법 - 완성(1) - 인스턴스 생성 후 프로퍼티 제거
+
+* (예제 7-8)~(예제 7-10)은 기본적인 상속에 성공했지만 SubClass 인스턴스의 constructor는 여전히 SuperClass를 카리키는 상태
+    - SubClass 인스턴스, SubClass.prototype 에는 constructor가 없음 -> SubClass.prototype.constructor가 원래 SubClass를 가리키도록 수정
+
+(예제 7-8) 수정
+```js
+SubClass.prototype.constructor = SubClass;
+```
+
+### 7-12
+클래스 상속 및 추상화 방법 - 완성(2) - 빈 함수를 활용
+
+(예제 7-9) 수정
+```js
+SubClass.prototype.consturctor = SubClass;
+Bridge.prototype.constructor = SuperClass;
+```
+
+### 7-13
+클래스 상속 및 추상화 방법 - 완성(3) - Object.create 활용
+
+(예제 7-10) 수정
+```js
+SubClass.prototype = Object.create(SuperClass.prototype);
+SubClass.prototype.constructor = SubClass;
+```
+
+### 7-14
+상위 클래스 접근 수단인 super 메서드 추가
+
+* 하위 클래스에서 상위 클래스의 프로토타입 메서드에 접근하고자 할 때, 다른 객체지향 언어들의 클래스 문법 중 super 모방
+* (예제 7-13) 에 super 메서드 추가
+    - 인자가 비어있을 경우 SuperClass 생성자 함수에 접근하는 것으로 간주, this가 변경되지 않도록 클로저 활용
+    - SuperClass의 portotype 내부의 propName에 해당하는 값이 함수가 아닌 경우 그대로 반환/ 함수인 경우 클로저 활용, 매서드에 접근
+* SuperClass의 생성자 함수에 접근하고자 할 때는 this.super()
+    - SuperClass의 프로토타입 메서드에 접근하고자 할 때는 this.super(propName)
+* sq.getArea() 호출 시 SubClass의 메서드 실행 ('size is : 100')
+    - sq.super('getArea')() 호출 시 SuperClass 메서드 실행 ('100')
+* super()를 직접 구현해 상위 생성자나 메서드 호출 가능하게 함.
+* 함수형 언어 스타일로 상위 메서드 접근을 가능하게 만드는 패턴.
+
+### 7-15
+ES5와 ES6의 클래스 문법 비교
+
+* ES6 클래스는 class, constructor, static, method 등 문법 제공
+* function 키워드 없이도 메서드 정의 가능 / static은 생성자 함수에서만 사용 가능
+
+### 7-16
+ES6의 클래스 상속
+
+* extends, super 키워드로 상속 처리
+* super()는 상위 생성자 호출, super.method()는 상위 메서드 호출
+* ES5보다 훨씬 간결하고 명확한 클래스 구조 제공
